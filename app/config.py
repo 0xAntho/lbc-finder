@@ -8,7 +8,11 @@ JWT_SECRET = os.getenv("JWT_SECRET", "changeme")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_DAYS = 30
 
-SMS_PROVIDER = os.getenv("SMS_PROVIDER", "ovh")  # "free" ou "ovh"
+SMS_PROVIDER = os.getenv("SMS_PROVIDER", "whatsapp")  # "whatsapp", "free" ou "ovh"
+
+# Callmebot WhatsApp
+WHATSAPP_PHONE = os.getenv("WHATSAPP_PHONE", "")   # format international : +33612345678
+WHATSAPP_APIKEY = os.getenv("WHATSAPP_APIKEY", "")
 
 # OVH
 OVH_APP_KEY = os.getenv("OVH_APP_KEY", "")

@@ -1,19 +1,19 @@
 import logging
+import urllib.parse
 import httpx
 from app.config import (
     SMS_PROVIDER,
     OVH_APP_KEY, OVH_APP_SECRET, OVH_CONSUMER_KEY,
     OVH_SMS_SERVICE, OVH_SENDER, OVH_RECIPIENT,
-    FREE_USER, FREE_PASS, PHONE_NUMBER
+    FREE_USER, FREE_PASS, PHONE_NUMBER,
+    WHATSAPP_PHONE, WHATSAPP_APIKEY,
 )
 
 logger = logging.getLogger(__name__)
 
-MAX_SMS_LENGTH = 160
-
 
 def _build_message(listing) -> str:
-    """Construit le message SMS (max 160 caractères)."""
+    """Construit le message de notification."""
     title = (listing.title or "Annonce")[:38]
     price = f"{listing.price:,}€".replace(",", " ") if listing.price else "Prix N/A"
     surface = f"{listing.surface}m²" if listing.surface else ""
@@ -22,37 +22,63 @@ def _build_message(listing) -> str:
     outside = f"Ext:{listing.outside_surface}m²" if listing.outside_surface else ""
     city = listing.city or ""
 
-    # URL courte : on garde juste le domaine + ID
     url = ""
     if listing.url:
-        # ex: https://www.leboncoin.fr/annonce/12345678
         parts = listing.url.rstrip("/").split("/")
-        url = f"lbc.fr/{parts[-1]}" if parts else listing.url[:30]
+        url = f"leboncoin.fr/annonce/{parts[-1]}" if parts else listing.url
 
     details = " | ".join(filter(None, [price, surface, rooms]))
     extras = " | ".join(filter(None, [land, outside]))
 
-    lines = [title, details]
+    lines = [f"🏠 {title}", details]
     if extras:
         lines.append(extras)
     if city:
-        lines.append(city)
+        lines.append(f"📍 {city}")
     if url:
-        lines.append(url)
+        lines.append(f"🔗 {url}")
 
-    msg = "\n".join(lines)
-    return msg[:MAX_SMS_LENGTH]
+    return "\n".join(lines)
 
 
 def send_sms(listing) -> bool:
     """Point d'entrée principal. Retourne True si envoyé avec succès."""
     message = _build_message(listing)
-    logger.info(f"SMS [{len(message)} chars]: {message!r}")
+    logger.info(f"Notification [{SMS_PROVIDER}]: {message!r}")
 
-    if SMS_PROVIDER == "free":
+    if SMS_PROVIDER == "whatsapp":
+        return _send_whatsapp(message)
+    elif SMS_PROVIDER == "free":
         return _send_free(message)
     else:
         return _send_ovh(message)
+
+
+def _send_whatsapp(message: str) -> bool:
+    """Envoi via Callmebot WhatsApp API (gratuit, usage personnel)."""
+    if not WHATSAPP_PHONE or not WHATSAPP_APIKEY:
+        logger.error("Callmebot : WHATSAPP_PHONE ou WHATSAPP_APIKEY non configuré")
+        return False
+    try:
+        encoded = urllib.parse.quote(message)
+        resp = httpx.get(
+            "https://api.callmebot.com/whatsapp.php",
+            params={
+                "phone": WHATSAPP_PHONE,
+                "text": message,
+                "apikey": WHATSAPP_APIKEY,
+            },
+            timeout=15,
+        )
+        if resp.status_code == 200:
+            logger.info(f"WhatsApp envoyé à {WHATSAPP_PHONE}")
+            return True
+        else:
+            logger.error(f"Callmebot erreur {resp.status_code}: {resp.text}")
+            return False
+    except Exception as e:
+        logger.error(f"Callmebot exception: {e}")
+        return False
 
 
 def _send_free(message: str) -> bool:
@@ -96,7 +122,7 @@ def _send_ovh(message: str) -> bool:
         client.post(
             f"/sms/{OVH_SMS_SERVICE}/jobs",
             receivers=[recipient],
-            message=message,
+            message=message[:160],
             sender=OVH_SENDER,
             noStopClause=True,
             priority="high",
