@@ -1,31 +1,31 @@
 {% extends "base.html" %}
-{% block title %}AlertLBC — {{ 'Éditer' if alert else 'Nouvelle alerte' }}{% endblock %}
+{% block title %}TLMVPSM — {{ 'Éditer' if alert else 'Nouvelle alerte' }}{% endblock %}
+
+{% block masthead_meta %}{{ 'Édition d\'alerte' if alert else 'Nouvelle alerte' }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1>{{ 'Éditer l\'alerte' if alert else 'Nouvelle alerte' }}</h1>
-  <p>{{ 'Modifie les critères de cette alerte.' if alert else 'Configure les critères de surveillance.' }}</p>
+
+{% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+
+<div class="section-head">
+  <span class="section-title">{{ 'Modifier l\'alerte' if alert else 'Créer une alerte' }}</span>
+  <a href="/dashboard" class="btn btn-ghost" style="font-size:11px; padding:4px 10px;">← Retour</a>
 </div>
 
-{% if error %}
-<div class="flash flash-error">{{ error }}</div>
-{% endif %}
-
-<div class="card" style="max-width: 600px;">
+<div class="form-card">
   <form action="{{ '/alerts/' + alert.id|string + '/edit' if alert else '/alerts/new' }}" method="post">
 
     <div class="form-group">
       <label>Nom de l'alerte</label>
-      <input type="text" name="name" placeholder="ex: Maison Lyon Sud" value="{{ alert.name if alert else '' }}" required>
+      <input type="text" name="name" placeholder="ex : Maison Lyon Sud" value="{{ alert.name if alert else '' }}" required>
     </div>
 
-    <hr class="divider">
-    <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px;">Localisation</div>
+    <div class="form-divider">Localisation</div>
 
     <div class="form-row">
       <div class="form-group">
         <label>Ville</label>
-        <input type="text" name="city" placeholder="ex: Lyon" value="{{ alert.city if alert else '' }}" required>
+        <input type="text" name="city" placeholder="ex : Lyon" value="{{ alert.city if alert else '' }}" required>
       </div>
       <div class="form-group">
         <label>Rayon (km)</label>
@@ -43,52 +43,50 @@
         <input type="number" name="lng" placeholder="4.8357" step="any" value="{{ alert.lng if alert else '' }}" required>
       </div>
     </div>
-    <p style="font-size: 11px; color: var(--muted); margin-top: -12px; margin-bottom: 20px;">
-      💡 Trouve les coordonnées sur <a href="https://www.latlong.net/" target="_blank">latlong.net</a>
+    <p class="form-hint" style="margin-top:-10px; margin-bottom:4px;">
+      Trouve les coordonnées sur <a href="https://www.latlong.net/" target="_blank" style="color:var(--accent)">latlong.net</a>
     </p>
 
-    <hr class="divider">
-    <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px;">Filtres (optionnels)</div>
+    <div class="form-divider">Filtres <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:11px; color:var(--muted2);">(tous optionnels)</span></div>
 
     <div class="form-row">
       <div class="form-group">
         <label>Prix maximum (€)</label>
-        <input type="number" name="max_price" placeholder="ex: 350000" min="0" value="{{ alert.max_price if alert and alert.max_price else '' }}">
+        <input type="number" name="max_price" placeholder="ex : 350 000" min="0" value="{{ alert.max_price if alert and alert.max_price else '' }}">
       </div>
       <div class="form-group">
         <label>Pièces minimum</label>
-        <input type="number" name="min_rooms" placeholder="ex: 4" min="1" max="20" value="{{ alert.min_rooms if alert and alert.min_rooms else '' }}">
+        <input type="number" name="min_rooms" placeholder="ex : 4" min="1" max="20" value="{{ alert.min_rooms if alert and alert.min_rooms else '' }}">
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
         <label>Surface habitable min (m²)</label>
-        <input type="number" name="min_surface" placeholder="ex: 80" min="0" value="{{ alert.min_surface if alert and alert.min_surface else '' }}">
+        <input type="number" name="min_surface" placeholder="ex : 80" min="0" value="{{ alert.min_surface if alert and alert.min_surface else '' }}">
       </div>
       <div class="form-group">
         <label>Surface terrain min (m²)</label>
-        <input type="number" name="min_land_surface" placeholder="ex: 300" min="0" value="{{ alert.min_land_surface if alert and alert.min_land_surface else '' }}">
+        <input type="number" name="min_land_surface" placeholder="ex : 300" min="0" value="{{ alert.min_land_surface if alert and alert.min_land_surface else '' }}">
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label>Surface ext. min — balcon/terrasse (m²)</label>
-        <input type="number" name="min_outside_surface" placeholder="ex: 10" min="0" value="{{ alert.min_outside_surface if alert and alert.min_outside_surface else '' }}">
+        <label>Extérieur min — balcon/terrasse (m²)</label>
+        <input type="number" name="min_outside_surface" placeholder="ex : 10" min="0" value="{{ alert.min_outside_surface if alert and alert.min_outside_surface else '' }}">
       </div>
       <div class="form-group"></div>
     </div>
 
-    <hr class="divider">
-
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <button type="submit" class="btn btn-primary">
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" style="font-size:11px; letter-spacing:1px; text-transform:uppercase;">
         {{ 'Enregistrer' if alert else 'Créer l\'alerte' }}
       </button>
-      <a href="/dashboard" class="btn btn-ghost">Annuler</a>
+      <a href="/dashboard" class="btn btn-ghost" style="font-size:11px;">Annuler</a>
     </div>
 
   </form>
 </div>
+
 {% endblock %}

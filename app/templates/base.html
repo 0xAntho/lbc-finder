@@ -3,33 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}AlertLBC{% endblock %}</title>
+  <title>{% block title %}TLMVPSM{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d0f12;
-      --surface: #141619;
-      --surface2: #1c1f24;
-      --border: #2a2d35;
-      --accent: #e8ff47;
-      --accent2: #ff6b35;
-      --text: #e8eaed;
-      --muted: #6b7280;
-      --danger: #ff4444;
-      --success: #4caf7d;
-      --radius: 8px;
-      --font-display: 'Syne', sans-serif;
-      --font-mono: 'DM Mono', monospace;
+      --bg: #fffef9;
+      --surface: #fffdf5;
+      --border: #e8ddd0;
+      --border2: #d4c4b0;
+      --accent: #8b1a1a;
+      --accent-light: #fdf0f0;
+      --text: #1a1a1a;
+      --text2: #444;
+      --muted: #888;
+      --muted2: #bbb;
+      --success: #2e7d32;
+      --success-bg: #f1f8f1;
+      --danger: #c0392b;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Source Sans 3', system-ui, sans-serif;
     }
 
     html, body {
-      height: 100%;
+      min-height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: var(--font-display);
+      font-family: var(--font-body);
       font-size: 14px;
       line-height: 1.6;
     }
@@ -37,274 +39,249 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      min-height: 100vh;
+    /* ── Layout ── */
+    .layout { max-width: 900px; margin: 0 auto; padding: 0 24px 60px; }
+
+    /* ── Masthead ── */
+    .masthead {
+      text-align: center;
+      padding: 28px 0 16px;
+      border-bottom: 3px double var(--accent);
+      margin-bottom: 0;
     }
 
-    /* Sidebar */
-    .sidebar {
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      padding: 32px 0;
-      display: flex;
-      flex-direction: column;
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-
-    .sidebar-logo {
-      padding: 0 24px 32px;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .sidebar-logo span {
-      color: var(--accent);
-    }
-
-    .sidebar-logo .dot {
-      width: 8px; height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.8); }
-    }
-
-    .sidebar-nav {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 24px;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 13px;
-      letter-spacing: 0.3px;
-      transition: all 0.15s;
-      border-left: 2px solid transparent;
-      text-decoration: none;
-    }
-
-    .nav-item:hover { color: var(--text); text-decoration: none; }
-    .nav-item.active {
-      color: var(--accent);
-      border-left-color: var(--accent);
-      background: rgba(232, 255, 71, 0.05);
-    }
-
-    .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
-
-    .sidebar-footer {
-      padding: 24px;
-      border-top: 1px solid var(--border);
-    }
-
-    .logout-btn {
-      width: 100%;
-      padding: 8px 12px;
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--muted);
-      font-family: var(--font-display);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.5px;
-    }
-    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
-
-    /* Main */
-    .main {
-      padding: 40px;
-      max-width: 900px;
-    }
-
-    .page-header {
-      margin-bottom: 32px;
-    }
-
-    .page-header h1 {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      line-height: 1.2;
-    }
-
-    .page-header p {
-      color: var(--muted);
-      margin-top: 6px;
-      font-size: 13px;
-    }
-
-    /* Cards */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      margin-bottom: 16px;
-    }
-
-    /* Badges */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      font-family: var(--font-mono);
-      letter-spacing: 0.5px;
-    }
-    .badge-active { background: rgba(76, 175, 125, 0.15); color: var(--success); }
-    .badge-inactive { background: rgba(107, 114, 128, 0.15); color: var(--muted); }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: var(--radius);
-      font-family: var(--font-display);
+    .masthead-eyebrow {
+      font-family: var(--font-body);
       font-size: 13px;
       font-weight: 700;
-      cursor: pointer;
-      border: none;
-      transition: all 0.15s;
-      letter-spacing: 0.3px;
-      text-decoration: none;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0.75;
+      margin-bottom: 4px;
     }
-    .btn-primary {
-      background: var(--accent);
-      color: #0d0f12;
-    }
-    .btn-primary:hover { background: #d4eb2e; text-decoration: none; color: #0d0f12; }
 
-    .btn-ghost {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--muted);
+    .masthead-logo {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: -1.5px;
+      line-height: 1;
     }
-    .btn-ghost:hover { border-color: var(--text); color: var(--text); text-decoration: none; }
 
-    .btn-danger {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--muted);
-    }
-    .btn-danger:hover { color: var(--danger); }
-
-    /* Forms */
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
+    .masthead-tagline {
+      font-family: var(--font-body);
+      font-size: 9px;
+      letter-spacing: 4px;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 8px;
+      margin-top: 7px;
+    }
+
+    .masthead-meta {
+      font-family: var(--font-body);
+      font-size: 11px;
+      color: var(--muted2);
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    /* ── Nav ── */
+    .nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .nav-links { display: flex; gap: 20px; }
+
+    .nav-item {
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      padding-bottom: 2px;
+      transition: color 0.1s;
+    }
+    .nav-item:hover { color: var(--text); text-decoration: none; }
+    .nav-item.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--font-body); font-size: 12px; font-weight: 600;
+      letter-spacing: 0.5px; cursor: pointer; border: none;
+      transition: all 0.1s; text-decoration: none; padding: 6px 14px;
+    }
+    .btn:hover { text-decoration: none; }
+    .btn-primary {
+      background: var(--accent); color: white;
+    }
+    .btn-primary:hover { background: #6d1414; color: white; }
+    .btn-ghost {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--text2);
+    }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); background: transparent; }
+    .btn-danger { background: transparent; border: 1px solid transparent; color: var(--muted); font-size: 11px; }
+    .btn-danger:hover { color: var(--danger); }
+    .btn-logout {
+      font-family: var(--font-body); font-size: 10px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted); background: transparent;
+      border: 1px solid var(--border); cursor: pointer;
+      padding: 4px 10px; transition: all 0.1s;
+    }
+    .btn-logout:hover { color: var(--danger); border-color: var(--danger); }
+
+    /* ── Stat row ── */
+    .stat-row {
+      display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 0; border: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      padding: 14px 18px; text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat-card:last-child { border-right: none; }
+    .stat-card-value {
+      font-family: var(--font-display);
+      font-size: 28px; font-weight: 700;
+      color: var(--accent); line-height: 1;
+    }
+    .stat-card-value.neutral { color: var(--text); }
+    .stat-card-value.success { color: var(--success); }
+    .stat-card-label {
+      font-size: 9px; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted); margin-top: 5px;
+    }
+
+    /* ── Section heading ── */
+    .section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: var(--font-body); font-size: 10px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    }
+
+    /* ── Alert cards ── */
+    .alert-item {
+      border-bottom: 1px solid var(--border);
+      padding: 16px 0;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-name {
+      font-family: var(--font-display);
+      font-size: 17px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.3px; margin-bottom: 4px;
+    }
+    .alert-criteria {
+      font-size: 12px; color: var(--muted); line-height: 1.7;
+    }
+    .alert-criteria strong { color: var(--text2); font-weight: 600; }
+    .alert-footer {
+      display: flex; align-items: center; gap: 14px; margin-top: 8px;
+    }
+    .alert-checked { font-size: 10px; color: var(--muted2); font-style: italic; }
+    .alert-count { font-size: 11px; color: var(--accent); font-weight: 600; }
+    .alert-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+    /* ── Badges ── */
+    .badge { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+    .badge::before { content: '●'; margin-right: 3px; font-size: 7px; }
+    .badge-active { color: var(--success); }
+    .badge-inactive { color: var(--muted2); }
+
+    /* ── Flash ── */
+    .flash {
+      padding: 10px 14px; margin-bottom: 20px;
+      font-size: 12px; font-weight: 500; border-left: 3px solid;
+    }
+    .flash-error { background: #fdf0f0; border-color: var(--accent); color: var(--danger); }
+    .flash-success { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+
+    /* ── Forms ── */
+    .form-card {
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      max-width: 580px;
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block; font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 7px;
     }
     .form-group input, .form-group select {
-      width: 100%;
-      padding: 10px 14px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-family: var(--font-mono);
-      font-size: 13px;
-      transition: border-color 0.15s;
-      outline: none;
+      width: 100%; padding: 8px 10px;
+      background: white; border: 1px solid var(--border);
+      color: var(--text); font-family: var(--font-body); font-size: 13px;
+      outline: none; transition: border-color 0.1s;
+      border-radius: 0;
     }
-    .form-group input:focus, .form-group select:focus {
-      border-color: var(--accent);
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group input::placeholder { color: var(--muted2); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-divider {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px; margin: 22px 0 16px;
     }
-    .form-group input::placeholder { color: var(--muted); }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
+    .form-hint { font-size: 11px; color: var(--muted2); margin-top: 5px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
 
-    /* Flash messages */
-    .flash {
-      padding: 12px 16px;
-      border-radius: var(--radius);
-      margin-bottom: 24px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .flash-error { background: rgba(255, 68, 68, 0.1); border: 1px solid rgba(255, 68, 68, 0.3); color: #ff7070; }
-    .flash-success { background: rgba(76, 175, 125, 0.1); border: 1px solid rgba(76, 175, 125, 0.3); color: var(--success); }
+    /* ── Empty ── */
+    .empty { text-align: center; padding: 50px 0; }
+    .empty-title { font-family: var(--font-display); font-size: 20px; color: var(--muted2); margin-bottom: 8px; }
+    .empty p { font-size: 13px; color: var(--muted); }
 
-    /* Mono text */
-    .mono { font-family: var(--font-mono); }
-
-    /* Divider */
-    .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
-
-    /* Empty state */
-    .empty {
-      text-align: center;
-      padding: 60px 24px;
-      color: var(--muted);
-    }
-    .empty svg { width: 40px; height: 40px; margin-bottom: 16px; opacity: 0.3; }
-    .empty h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    .empty p { font-size: 13px; }
+    /* ── Divider ── */
+    .rule { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    .rule-double { border: none; border-top: 3px double var(--border); margin: 28px 0; }
   </style>
 </head>
 <body>
 {% block body %}
 <div class="layout">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="dot"></div>
-      Alert<span>LBC</span>
+
+  <header class="masthead">
+        <div class="masthead-eyebrow">Tout le monde veut prendre</div>
+    <div class="masthead-logo">Sa Maison</div>
+    <div class="masthead-tagline">Surveillance immobilière · leboncoin</div>
+    <div class="masthead-meta">{% block masthead_meta %}{% endblock %}</div>
+  </header>
+
+  <nav class="nav-bar">
+    <div class="nav-links">
+      <a href="/dashboard" class="nav-item {% if active == 'dashboard' %}active{% endif %}">Alertes</a>
+      <a href="/history" class="nav-item {% if active == 'history' %}active{% endif %}">Historique</a>
     </div>
-    <nav class="sidebar-nav">
-      <a href="/dashboard" class="nav-item {% if active == 'dashboard' %}active{% endif %}">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-        Alertes
-      </a>
-      <a href="/history" class="nav-item {% if active == 'history' %}active{% endif %}">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Historique
-      </a>
-    </nav>
-    <div class="sidebar-footer">
-      <form action="/logout" method="post">
-        <button type="submit" class="logout-btn">DÉCONNEXION</button>
+    <div class="nav-actions">
+      <form action="/logout" method="post" style="display:inline">
+        <button type="submit" class="btn-logout">Déconnexion</button>
       </form>
     </div>
-  </aside>
-  <main class="main">
-    {% block content %}{% endblock %}
-  </main>
+  </nav>
+
+  {% block content %}{% endblock %}
+
 </div>
 {% endblock %}
 </body>

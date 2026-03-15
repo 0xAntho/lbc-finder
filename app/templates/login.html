@@ -3,160 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlertLBC — Connexion</title>
+  <title>Sa Maison — Connexion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0d0f12;
-      --surface: #141619;
-      --border: #2a2d35;
-      --accent: #e8ff47;
-      --text: #e8eaed;
-      --muted: #6b7280;
-      --danger: #ff4444;
-    }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Syne', sans-serif;
+      background: #fffef9;
+      font-family: 'Source Sans 3', system-ui, sans-serif;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      /* Grid de fond */
-      background-image:
-        linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
-      background-size: 40px 40px;
+      display: flex; align-items: center; justify-content: center;
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(139,26,26,0.03) 28px, rgba(139,26,26,0.03) 29px);
     }
-
-    .login-wrap {
-      width: 100%;
-      max-width: 380px;
-      padding: 24px;
+    .wrap { width: 100%; max-width: 360px; padding: 24px; }
+    .masthead { text-align: center; margin-bottom: 28px; }
+    .logo-eyebrow {
+      font-size: 13px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; color: #8b1a1a; opacity: 0.75;
+      margin-bottom: 4px;
     }
-
     .logo {
-      text-align: center;
-      margin-bottom: 40px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 36px; font-weight: 900; color: #8b1a1a;
+      letter-spacing: -1.5px; line-height: 1;
     }
-
-    .logo h1 {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: -1px;
+    .tagline {
+      font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+      color: #888; margin-top: 7px;
     }
-
-    .logo h1 span { color: var(--accent); }
-
-    .logo p {
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 6px;
-    }
-
     .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 32px;
+      background: #fffdf5;
+      border: 1px solid #e8ddd0;
+      border-top: 3px solid #8b1a1a;
+      padding: 28px 28px 24px;
     }
-
+    .card-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: #888; margin-bottom: 20px;
+      text-align: center; border-bottom: 1px solid #e8ddd0; padding-bottom: 12px;
+    }
     .flash-error {
-      background: rgba(255, 68, 68, 0.1);
-      border: 1px solid rgba(255, 68, 68, 0.3);
-      color: #ff7070;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 20px;
+      background: #fdf0f0; border-left: 3px solid #8b1a1a;
+      color: #c0392b; padding: 8px 12px;
+      font-size: 12px; font-weight: 500; margin-bottom: 16px;
     }
-
-    .form-group { margin-bottom: 20px; }
+    .form-group { margin-bottom: 18px; }
     .form-group label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
+      display: block; font-size: 10px; font-weight: 700;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: #888; margin-bottom: 7px;
     }
     .form-group input {
-      width: 100%;
-      padding: 12px 16px;
-      background: #0d0f12;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 15px;
-      letter-spacing: 2px;
-      outline: none;
-      transition: border-color 0.15s;
+      width: 100%; padding: 9px 11px;
+      background: white; border: 1px solid #e8ddd0;
+      color: #1a1a1a; font-family: 'Source Sans 3', sans-serif; font-size: 14px;
+      outline: none; border-radius: 0; transition: border-color 0.1s;
     }
-    .form-group input:focus { border-color: var(--accent); }
-    .form-group input::placeholder { color: var(--muted); letter-spacing: 0; }
-
-    .hint {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 6px;
-    }
-
+    .form-group input:focus { border-color: #8b1a1a; }
+    .form-group input::placeholder { color: #bbb; }
+    .hint { font-size: 10px; color: #bbb; margin-top: 5px; font-style: italic; }
     .btn {
-      width: 100%;
-      padding: 13px;
-      background: var(--accent);
-      color: #0d0f12;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Syne', sans-serif;
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      transition: background 0.15s;
+      width: 100%; padding: 10px;
+      background: #8b1a1a; color: white;
+      border: none; font-family: 'Source Sans 3', sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; cursor: pointer; transition: background 0.1s;
     }
-    .btn:hover { background: #d4eb2e; }
-
-    .footer-note {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 11px;
-      color: var(--muted);
-    }
+    .btn:hover { background: #6d1414; }
+    .footer { text-align: center; margin-top: 16px; font-size: 10px; color: #bbb; font-style: italic; }
   </style>
 </head>
 <body>
-  <div class="login-wrap">
-    <div class="logo">
-      <h1>Alert<span>LBC</span></h1>
-      <p>Surveillance d'annonces immobilières</p>
+  <div class="wrap">
+    <div class="masthead">
+      <div class="logo-eyebrow">Tout le monde veut prendre</div>
+      <div class="logo">Sa Maison</div>
+      <div class="tagline">Surveillance immobilière · leboncoin</div>
     </div>
     <div class="card">
+      <div class="card-title">Accès privé</div>
       {% if error %}
       <div class="flash-error">{{ error }}</div>
       {% endif %}
       <form action="/login" method="post">
         <div class="form-group">
           <label>Numéro de téléphone</label>
-          <input
-            type="tel"
-            name="phone"
-            placeholder="06 12 34 56 78"
-            autocomplete="tel"
-            autofocus
-          >
+          <input type="tel" name="phone" placeholder="06 12 34 56 78" autocomplete="tel" autofocus>
           <p class="hint">Format : 06XXXXXXXX ou +336XXXXXXXX</p>
         </div>
-        <button type="submit" class="btn">ACCÉDER →</button>
+        <button type="submit" class="btn">Accéder →</button>
       </form>
     </div>
-    <p class="footer-note">Accès privé — usage personnel uniquement</p>
+    <p class="footer">Usage personnel uniquement</p>
   </div>
 </body>
 </html>
