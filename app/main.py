@@ -48,8 +48,17 @@ def get_or_create_user(db: Session, phone: str) -> User:
 # ── Auth ──────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-async def root():
-    return RedirectResponse(url="/dashboard")
+async def root(request: Request):
+    token = request.cookies.get("session")
+    if token:
+        from app.auth import verify_token
+        if verify_token(token):
+            return RedirectResponse(url="/dashboard")
+    return RedirectResponse(url="/login")
+
+@app.exception_handler(401)
+async def unauthorized_handler(request: Request, exc):
+    return RedirectResponse(url="/login")
 
 
 @app.get("/login", response_class=HTMLResponse)
