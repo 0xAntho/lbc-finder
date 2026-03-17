@@ -78,8 +78,11 @@
   </div>
 
   <div class="form-actions">
-    <button class="btn btn-primary" id="submit-btn" onclick="submitAlert()" style="font-size:11px; letter-spacing:1px; text-transform:uppercase;">
-      {{ 'Enregistrer' if alert else 'Créer l\'alerte' }}
+    <button class="btn btn-primary" id="submit-btn"
+      data-label="{{ 'Enregistrer' if alert else 'Créer l\'alerte' }}"
+      onclick="submitAlert()"
+      style="font-size:11px; letter-spacing:1px; text-transform:uppercase;">
+      {{ 'Enregistrer' if alert else "Créer l'alerte" }}
     </button>
     <a href="/dashboard" class="btn btn-ghost" style="font-size:11px;">Annuler</a>
   </div>
@@ -136,7 +139,7 @@
         err.textContent = data.error || 'Erreur inconnue';
         err.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = '{{ Enregistrer if alert else Créer l\'alerte }}';
+        btn.textContent = btn.dataset.label;
       }
     } catch (e) {
       err.textContent = 'Erreur réseau.';
