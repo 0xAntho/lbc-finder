@@ -275,9 +275,7 @@
       <a href="/history" class="nav-item {% if active == 'history' %}active{% endif %}">Historique</a>
     </div>
     <div class="nav-actions">
-      <form action="/logout" method="post" style="display:inline">
-        <button type="submit" class="btn-logout">Déconnexion</button>
-      </form>
+      <button onclick="doLogout()" class="btn-logout">Déconnexion</button>
     </div>
   </nav>
 
@@ -287,3 +285,26 @@
 {% endblock %}
 </body>
 </html>
+
+<script>
+  // Logout
+  async function doLogout() {
+    await fetch('/logout', { method: 'POST' });
+    window.location.href = '/login';
+  }
+
+  // Toggle alerte
+  async function toggleAlert(id) {
+    const resp = await fetch(`/alerts/${id}/toggle`, { method: 'POST' });
+    const data = await resp.json();
+    if (data.redirect) window.location.href = data.redirect;
+  }
+
+  // Supprimer alerte
+  async function deleteAlert(id) {
+    if (!confirm('Supprimer cette alerte ?')) return;
+    const resp = await fetch(`/alerts/${id}/delete`, { method: 'POST' });
+    const data = await resp.json();
+    if (data.redirect) window.location.href = data.redirect;
+  }
+</script>

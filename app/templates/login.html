@@ -28,15 +28,10 @@
       font-size: 36px; font-weight: 900; color: #8b1a1a;
       letter-spacing: -1.5px; line-height: 1;
     }
-    .tagline {
-      font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
-      color: #888; margin-top: 7px;
-    }
+    .tagline { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: #888; margin-top: 7px; }
     .card {
-      background: #fffdf5;
-      border: 1px solid #e8ddd0;
-      border-top: 3px solid #8b1a1a;
-      padding: 28px 28px 24px;
+      background: #fffdf5; border: 1px solid #e8ddd0;
+      border-top: 3px solid #8b1a1a; padding: 28px 28px 24px;
     }
     .card-title {
       font-size: 10px; font-weight: 700; letter-spacing: 2px;
@@ -46,13 +41,12 @@
     .flash-error {
       background: #fdf0f0; border-left: 3px solid #8b1a1a;
       color: #c0392b; padding: 8px 12px;
-      font-size: 12px; font-weight: 500; margin-bottom: 16px;
+      font-size: 12px; font-weight: 500; margin-bottom: 16px; display: none;
     }
     .form-group { margin-bottom: 18px; }
     .form-group label {
       display: block; font-size: 10px; font-weight: 700;
-      letter-spacing: 1.5px; text-transform: uppercase;
-      color: #888; margin-bottom: 7px;
+      letter-spacing: 1.5px; text-transform: uppercase; color: #888; margin-bottom: 7px;
     }
     .form-group input {
       width: 100%; padding: 9px 11px;
@@ -65,12 +59,13 @@
     .hint { font-size: 10px; color: #bbb; margin-top: 5px; font-style: italic; }
     .btn {
       width: 100%; padding: 10px;
-      background: #8b1a1a; color: white;
-      border: none; font-family: 'Source Sans 3', sans-serif;
+      background: #8b1a1a; color: white; border: none;
+      font-family: 'Source Sans 3', sans-serif;
       font-size: 11px; font-weight: 700; letter-spacing: 2px;
       text-transform: uppercase; cursor: pointer; transition: background 0.1s;
     }
     .btn:hover { background: #6d1414; }
+    .btn:disabled { background: #c9a0a0; cursor: not-allowed; }
     .footer { text-align: center; margin-top: 16px; font-size: 10px; color: #bbb; font-style: italic; }
   </style>
 </head>
@@ -83,19 +78,52 @@
     </div>
     <div class="card">
       <div class="card-title">Accès privé</div>
-      {% if error %}
-      <div class="flash-error">{{ error }}</div>
-      {% endif %}
-      <form action="/login" method="post">
-        <div class="form-group">
-          <label>Numéro de téléphone</label>
-          <input type="tel" name="phone" placeholder="06 12 34 56 78" autocomplete="tel" autofocus>
-          <p class="hint">Format : 06XXXXXXXX ou +336XXXXXXXX</p>
-        </div>
-        <button type="submit" class="btn">Accéder →</button>
-      </form>
+      <div class="flash-error" id="error-msg"></div>
+      <div class="form-group">
+        <label>Numéro de téléphone</label>
+        <input type="tel" id="phone" placeholder="06 12 34 56 78" autocomplete="tel" autofocus>
+        <p class="hint">Format : 06XXXXXXXX ou +336XXXXXXXX</p>
+      </div>
+      <button class="btn" id="submit-btn" onclick="doLogin()">Accéder →</button>
     </div>
     <p class="footer">Usage personnel uniquement</p>
   </div>
+  <script>
+    document.getElementById('phone').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    async function doLogin() {
+      const phone = document.getElementById('phone').value.trim();
+      const btn = document.getElementById('submit-btn');
+      const err = document.getElementById('error-msg');
+
+      btn.disabled = true;
+      btn.textContent = 'Connexion…';
+      err.style.display = 'none';
+
+      try {
+        const resp = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        const data = await resp.json();
+        if (data.redirect) {
+          window.location.href = data.redirect;
+        } else {
+          err.textContent = data.error || 'Erreur inconnue';
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Accéder →';
+        }
+      } catch (e) {
+        err.textContent = 'Erreur réseau, réessaie.';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Accéder →';
+      }
+    }
+  </script>
 </body>
 </html>

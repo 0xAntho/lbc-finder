@@ -1,10 +1,8 @@
 {% extends "base.html" %}
-{% block title %}TLMVPSM — {{ 'Éditer' if alert else 'Nouvelle alerte' }}{% endblock %}
-
+{% block title %}Sa Maison — {{ 'Éditer' if alert else 'Nouvelle alerte' }}{% endblock %}
 {% block masthead_meta %}{{ 'Édition d\'alerte' if alert else 'Nouvelle alerte' }}{% endblock %}
 
 {% block content %}
-
 {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
 
 <div class="section-head">
@@ -12,81 +10,139 @@
   <a href="/dashboard" class="btn btn-ghost" style="font-size:11px; padding:4px 10px;">← Retour</a>
 </div>
 
+<div class="flash flash-error" id="form-error" style="display:none; margin-bottom:16px;"></div>
+
 <div class="form-card">
-  <form action="{{ '/alerts/' + alert.id|string + '/edit' if alert else '/alerts/new' }}" method="post">
+  <div class="form-group">
+    <label>Nom de l'alerte</label>
+    <input type="text" id="name" placeholder="ex : Maison Lyon Sud" value="{{ alert.name if alert else '' }}">
+  </div>
 
+  <div class="form-divider">Localisation</div>
+
+  <div class="form-row">
     <div class="form-group">
-      <label>Nom de l'alerte</label>
-      <input type="text" name="name" placeholder="ex : Maison Lyon Sud" value="{{ alert.name if alert else '' }}" required>
+      <label>Ville</label>
+      <input type="text" id="city" placeholder="ex : Lyon" value="{{ alert.city if alert else '' }}">
     </div>
-
-    <div class="form-divider">Localisation</div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Ville</label>
-        <input type="text" name="city" placeholder="ex : Lyon" value="{{ alert.city if alert else '' }}" required>
-      </div>
-      <div class="form-group">
-        <label>Rayon (km)</label>
-        <input type="number" name="radius_km" placeholder="10" min="1" max="200" value="{{ alert.radius_km if alert else '10' }}" required>
-      </div>
+    <div class="form-group">
+      <label>Rayon (km)</label>
+      <input type="number" id="radius_km" placeholder="10" min="1" max="200" value="{{ alert.radius_km if alert else '10' }}">
     </div>
+  </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>Latitude</label>
-        <input type="number" name="lat" placeholder="45.7640" step="any" value="{{ alert.lat if alert else '' }}" required>
-      </div>
-      <div class="form-group">
-        <label>Longitude</label>
-        <input type="number" name="lng" placeholder="4.8357" step="any" value="{{ alert.lng if alert else '' }}" required>
-      </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Latitude</label>
+      <input type="number" id="lat" placeholder="45.7640" step="any" value="{{ alert.lat if alert else '' }}">
     </div>
-    <p class="form-hint" style="margin-top:-10px; margin-bottom:4px;">
-      Trouve les coordonnées sur <a href="https://www.latlong.net/" target="_blank" style="color:var(--accent)">latlong.net</a>
-    </p>
-
-    <div class="form-divider">Filtres <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:11px; color:var(--muted2);">(tous optionnels)</span></div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Prix maximum (€)</label>
-        <input type="number" name="max_price" placeholder="ex : 350 000" min="0" value="{{ alert.max_price if alert and alert.max_price else '' }}">
-      </div>
-      <div class="form-group">
-        <label>Pièces minimum</label>
-        <input type="number" name="min_rooms" placeholder="ex : 4" min="1" max="20" value="{{ alert.min_rooms if alert and alert.min_rooms else '' }}">
-      </div>
+    <div class="form-group">
+      <label>Longitude</label>
+      <input type="number" id="lng" placeholder="4.8357" step="any" value="{{ alert.lng if alert else '' }}">
     </div>
+  </div>
+  <p class="form-hint" style="margin-top:-10px; margin-bottom:4px;">
+    Trouve les coordonnées sur <a href="https://www.latlong.net/" target="_blank" style="color:var(--accent)">latlong.net</a>
+  </p>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>Surface habitable min (m²)</label>
-        <input type="number" name="min_surface" placeholder="ex : 80" min="0" value="{{ alert.min_surface if alert and alert.min_surface else '' }}">
-      </div>
-      <div class="form-group">
-        <label>Surface terrain min (m²)</label>
-        <input type="number" name="min_land_surface" placeholder="ex : 300" min="0" value="{{ alert.min_land_surface if alert and alert.min_land_surface else '' }}">
-      </div>
+  <div class="form-divider">Filtres <span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:11px; color:var(--muted2);">(tous optionnels)</span></div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Prix maximum (€)</label>
+      <input type="number" id="max_price" placeholder="ex : 350000" min="0" value="{{ alert.max_price if alert and alert.max_price else '' }}">
     </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Extérieur min — balcon/terrasse (m²)</label>
-        <input type="number" name="min_outside_surface" placeholder="ex : 10" min="0" value="{{ alert.min_outside_surface if alert and alert.min_outside_surface else '' }}">
-      </div>
-      <div class="form-group"></div>
+    <div class="form-group">
+      <label>Pièces minimum</label>
+      <input type="number" id="min_rooms" placeholder="ex : 4" min="1" max="20" value="{{ alert.min_rooms if alert and alert.min_rooms else '' }}">
     </div>
+  </div>
 
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary" style="font-size:11px; letter-spacing:1px; text-transform:uppercase;">
-        {{ 'Enregistrer' if alert else 'Créer l\'alerte' }}
-      </button>
-      <a href="/dashboard" class="btn btn-ghost" style="font-size:11px;">Annuler</a>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Surface habitable min (m²)</label>
+      <input type="number" id="min_surface" placeholder="ex : 80" min="0" value="{{ alert.min_surface if alert and alert.min_surface else '' }}">
     </div>
+    <div class="form-group">
+      <label>Surface terrain min (m²)</label>
+      <input type="number" id="min_land_surface" placeholder="ex : 300" min="0" value="{{ alert.min_land_surface if alert and alert.min_land_surface else '' }}">
+    </div>
+  </div>
 
-  </form>
+  <div class="form-row">
+    <div class="form-group">
+      <label>Extérieur min — balcon/terrasse (m²)</label>
+      <input type="number" id="min_outside_surface" placeholder="ex : 10" min="0" value="{{ alert.min_outside_surface if alert and alert.min_outside_surface else '' }}">
+    </div>
+    <div class="form-group"></div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" id="submit-btn" onclick="submitAlert()" style="font-size:11px; letter-spacing:1px; text-transform:uppercase;">
+      {{ 'Enregistrer' if alert else 'Créer l\'alerte' }}
+    </button>
+    <a href="/dashboard" class="btn btn-ghost" style="font-size:11px;">Annuler</a>
+  </div>
 </div>
 
+<script>
+  const ALERT_ID = {{ alert.id if alert else 'null' }};
+  const URL = ALERT_ID ? `/alerts/${ALERT_ID}/edit` : '/alerts/new';
+
+  function toInt(v) {
+    const n = parseInt(v);
+    return isNaN(n) ? null : n;
+  }
+
+  async function submitAlert() {
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('form-error');
+    err.style.display = 'none';
+
+    const name = document.getElementById('name').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const lat = parseFloat(document.getElementById('lat').value);
+    const lng = parseFloat(document.getElementById('lng').value);
+    const radius_km = parseInt(document.getElementById('radius_km').value);
+
+    if (!name || !city || isNaN(lat) || isNaN(lng) || isNaN(radius_km)) {
+      err.textContent = 'Nom, ville, coordonnées et rayon sont obligatoires.';
+      err.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enregistrement…';
+
+    const body = {
+      name, city, lat, lng, radius_km,
+      max_price: toInt(document.getElementById('max_price').value),
+      min_surface: toInt(document.getElementById('min_surface').value),
+      min_land_surface: toInt(document.getElementById('min_land_surface').value),
+      min_outside_surface: toInt(document.getElementById('min_outside_surface').value),
+      min_rooms: toInt(document.getElementById('min_rooms').value),
+    };
+
+    try {
+      const resp = await fetch(URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json();
+      if (data.redirect) {
+        window.location.href = data.redirect;
+      } else {
+        err.textContent = data.error || 'Erreur inconnue';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '{{ Enregistrer if alert else Créer l\'alerte }}';
+      }
+    } catch (e) {
+      err.textContent = 'Erreur réseau.';
+      err.style.display = 'block';
+      btn.disabled = false;
+    }
+  }
+</script>
 {% endblock %}

@@ -1,13 +1,15 @@
 import logging
-from datetime import datetime
+import threading
 from contextlib import asynccontextmanager
+from typing import Optional
 
-from fastapi import FastAPI, Request, Depends, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from app.database import init_db, get_db, User, Alert, Listing
-from app.auth import create_token, get_current_user, check_phone
+from app.auth import create_token, get_current_user, check_phone, verify_token
 from app.scheduler import start_scheduler, stop_scheduler, run_all_alerts, check_alert
 from sqlalchemy.orm import Session
 
@@ -30,10 +32,31 @@ async def lifespan(app: FastAPI):
     logger.info("Application arrêtée")
 
 
-app = FastAPI(title="AlertLBC", lifespan=lifespan)
+app = FastAPI(title="Sa Maison", lifespan=lifespan)
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────
+# ── Pydantic models ───────────────────────────────────────────────────────
+
+class LoginBody(BaseModel):
+    phone: str
+
+class AlertBody(BaseModel):
+    name: str
+    city: str
+    lat: float
+    lng: float
+    radius_km: int
+    max_price: Optional[int] = None
+    min_surface: Optional[int] = None
+    min_land_surface: Optional[int] = None
+    min_outside_surface: Optional[int] = None
+    min_rooms: Optional[int] = None
+
+class RunNowBody(BaseModel):
+    phone: str
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────
 
 def get_or_create_user(db: Session, phone: str) -> User:
     user = db.query(User).filter(User.phone_number == phone).first()
@@ -50,11 +73,10 @@ def get_or_create_user(db: Session, phone: str) -> User:
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     token = request.cookies.get("session")
-    if token:
-        from app.auth import verify_token
-        if verify_token(token):
-            return RedirectResponse(url="/dashboard")
+    if token and verify_token(token):
+        return RedirectResponse(url="/dashboard")
     return RedirectResponse(url="/login")
+
 
 @app.exception_handler(401)
 async def unauthorized_handler(request: Request, exc):
@@ -67,31 +89,22 @@ async def login_page(request: Request):
 
 
 @app.post("/login")
-async def login(
-    request: Request,
-    response: Response,
-    phone: str = Form(...),
-    db: Session = Depends(get_db),
-):
-    if not check_phone(phone):
-        return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Numéro non autorisé."},
-        )
+async def login(body: LoginBody, db: Session = Depends(get_db)):
+    if not check_phone(body.phone):
+        return JSONResponse({"error": "Numéro non autorisé."}, status_code=401)
 
-    # Normaliser le numéro
-    clean = phone.strip().replace(" ", "").replace("-", "").replace(".", "")
+    clean = body.phone.strip().replace(" ", "").replace("-", "").replace(".", "")
     get_or_create_user(db, clean)
     token = create_token(clean)
 
-    resp = RedirectResponse(url="/dashboard", status_code=303)
+    resp = JSONResponse({"redirect": "/dashboard"})
     resp.set_cookie("session", token, httponly=True, max_age=60 * 60 * 24 * 30)
     return resp
 
 
 @app.post("/logout")
 async def logout():
-    resp = RedirectResponse(url="/login", status_code=303)
+    resp = JSONResponse({"redirect": "/login"})
     resp.delete_cookie("session")
     return resp
 
@@ -119,51 +132,36 @@ async def dashboard(
 # ── Alertes CRUD ──────────────────────────────────────────────────────────
 
 @app.get("/alerts/new", response_class=HTMLResponse)
-async def new_alert_page(
-    request: Request,
-    phone: str = Depends(get_current_user),
-):
+async def new_alert_page(request: Request, phone: str = Depends(get_current_user)):
     return templates.TemplateResponse("alert_form.html", {"request": request, "alert": None})
 
 
 @app.post("/alerts/new")
 async def create_alert(
-    request: Request,
+    body: AlertBody,
     phone: str = Depends(get_current_user),
     db: Session = Depends(get_db),
-    name: str = Form(...),
-    city: str = Form(...),
-    lat: float = Form(...),
-    lng: float = Form(...),
-    radius_km: int = Form(...),
-    max_price: str = Form(""),
-    min_surface: str = Form(""),
-    min_land_surface: str = Form(""),
-    min_outside_surface: str = Form(""),
-    min_rooms: str = Form(""),
 ):
     user = db.query(User).filter(User.phone_number == phone).first()
     if not user:
-        return RedirectResponse(url="/login")
-
-    def to_int(v): return int(v) if v and v.strip() else None
+        return JSONResponse({"error": "Non autorisé"}, status_code=401)
 
     alert = Alert(
         user_id=user.id,
-        name=name,
-        city=city,
-        lat=lat,
-        lng=lng,
-        radius_km=radius_km,
-        max_price=to_int(max_price),
-        min_surface=to_int(min_surface),
-        min_land_surface=to_int(min_land_surface),
-        min_outside_surface=to_int(min_outside_surface),
-        min_rooms=to_int(min_rooms),
+        name=body.name,
+        city=body.city,
+        lat=body.lat,
+        lng=body.lng,
+        radius_km=body.radius_km,
+        max_price=body.max_price,
+        min_surface=body.min_surface,
+        min_land_surface=body.min_land_surface,
+        min_outside_surface=body.min_outside_surface,
+        min_rooms=body.min_rooms,
     )
     db.add(alert)
     db.commit()
-    return RedirectResponse(url="/dashboard?message=Alerte créée avec succès", status_code=303)
+    return JSONResponse({"redirect": "/dashboard"})
 
 
 @app.get("/alerts/{alert_id}/edit", response_class=HTMLResponse)
@@ -183,38 +181,27 @@ async def edit_alert_page(
 @app.post("/alerts/{alert_id}/edit")
 async def update_alert(
     alert_id: int,
+    body: AlertBody,
     phone: str = Depends(get_current_user),
     db: Session = Depends(get_db),
-    name: str = Form(...),
-    city: str = Form(...),
-    lat: float = Form(...),
-    lng: float = Form(...),
-    radius_km: int = Form(...),
-    max_price: str = Form(""),
-    min_surface: str = Form(""),
-    min_land_surface: str = Form(""),
-    min_outside_surface: str = Form(""),
-    min_rooms: str = Form(""),
 ):
     user = db.query(User).filter(User.phone_number == phone).first()
     alert = db.query(Alert).filter(Alert.id == alert_id, Alert.user_id == user.id).first()
     if not alert:
-        return RedirectResponse(url="/dashboard")
+        return JSONResponse({"error": "Alerte introuvable"}, status_code=404)
 
-    def to_int(v): return int(v) if v and v.strip() else None
-
-    alert.name = name
-    alert.city = city
-    alert.lat = lat
-    alert.lng = lng
-    alert.radius_km = radius_km
-    alert.max_price = to_int(max_price)
-    alert.min_surface = to_int(min_surface)
-    alert.min_land_surface = to_int(min_land_surface)
-    alert.min_outside_surface = to_int(min_outside_surface)
-    alert.min_rooms = to_int(min_rooms)
+    alert.name = body.name
+    alert.city = body.city
+    alert.lat = body.lat
+    alert.lng = body.lng
+    alert.radius_km = body.radius_km
+    alert.max_price = body.max_price
+    alert.min_surface = body.min_surface
+    alert.min_land_surface = body.min_land_surface
+    alert.min_outside_surface = body.min_outside_surface
+    alert.min_rooms = body.min_rooms
     db.commit()
-    return RedirectResponse(url="/dashboard?message=Alerte mise à jour", status_code=303)
+    return JSONResponse({"redirect": "/dashboard"})
 
 
 @app.post("/alerts/{alert_id}/toggle")
@@ -228,7 +215,7 @@ async def toggle_alert(
     if alert:
         alert.is_active = not alert.is_active
         db.commit()
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return JSONResponse({"redirect": "/dashboard"})
 
 
 @app.post("/alerts/{alert_id}/delete")
@@ -243,7 +230,7 @@ async def delete_alert(
         db.query(Listing).filter(Listing.alert_id == alert_id).delete()
         db.delete(alert)
         db.commit()
-    return RedirectResponse(url="/dashboard?message=Alerte supprimée", status_code=303)
+    return JSONResponse({"redirect": "/dashboard"})
 
 
 # ── Historique ────────────────────────────────────────────────────────────
@@ -258,11 +245,7 @@ async def history(
     user = db.query(User).filter(User.phone_number == phone).first()
     alerts = db.query(Alert).filter(Alert.user_id == user.id).all()
 
-    query = (
-        db.query(Listing)
-        .join(Alert)
-        .filter(Alert.user_id == user.id)
-    )
+    query = db.query(Listing).join(Alert).filter(Alert.user_id == user.id)
     selected_alert = None
     if alert_id:
         query = query.filter(Listing.alert_id == alert_id)
@@ -271,32 +254,23 @@ async def history(
     listings = query.order_by(Listing.created_at.desc()).limit(200).all()
     return templates.TemplateResponse(
         "history.html",
-        {
-            "request": request,
-            "listings": listings,
-            "alerts": alerts,
-            "selected_alert": selected_alert,
-            "active": "history",
-        },
+        {"request": request, "listings": listings, "alerts": alerts, "selected_alert": selected_alert, "active": "history"},
     )
 
 
 # ── API utilitaires ───────────────────────────────────────────────────────
 
 @app.post("/api/run-now")
-async def run_now(phone: str = Depends(get_current_user)):
-    """Déclenche le job immédiatement (pour tests)."""
-    import threading
+async def run_now(body: RunNowBody):
+    if not check_phone(body.phone):
+        return JSONResponse({"status": "unauthorized"}, status_code=401)
     threading.Thread(target=run_all_alerts, daemon=True).start()
-    return {"status": "started"}
+    return JSONResponse({"status": "started"})
 
 
 @app.post("/api/alerts/{alert_id}/check")
-async def check_now(
-    alert_id: int,
-    phone: str = Depends(get_current_user),
-):
-    """Vérifie une alerte spécifique immédiatement."""
-    import threading
+async def check_now(alert_id: int, body: RunNowBody):
+    if not check_phone(body.phone):
+        return JSONResponse({"status": "unauthorized"}, status_code=401)
     threading.Thread(target=check_alert, args=(alert_id,), daemon=True).start()
-    return {"status": "started", "alert_id": alert_id}
+    return JSONResponse({"status": "started", "alert_id": alert_id})

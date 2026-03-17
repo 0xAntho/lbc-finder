@@ -72,15 +72,11 @@
       </div>
     </div>
     <div class="alert-actions">
-      <form action="/alerts/{{ alert.id }}/toggle" method="post" style="display:inline">
-        <button type="submit" class="btn btn-ghost" style="font-size:11px; padding:4px 10px;">
-          {% if alert.is_active %}Pause{% else %}Activer{% endif %}
-        </button>
-      </form>
+      <button onclick="toggleAlert({{ alert.id }})" class="btn btn-ghost" style="font-size:11px; padding:4px 10px;">
+        {% if alert.is_active %}Pause{% else %}Activer{% endif %}
+      </button>
       <a href="/alerts/{{ alert.id }}/edit" class="btn btn-ghost" style="font-size:11px; padding:4px 10px;">Éditer</a>
-      <form action="/alerts/{{ alert.id }}/delete" method="post" style="display:inline" onsubmit="return confirm('Supprimer cette alerte ?')">
-        <button type="submit" class="btn btn-danger">✕</button>
-      </form>
+      <button onclick="deleteAlert({{ alert.id }})" class="btn btn-danger">✕</button>
     </div>
   </div>
   {% endfor %}
