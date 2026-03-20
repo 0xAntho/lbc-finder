@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 from datetime import datetime
 
@@ -24,11 +25,40 @@ def _get_ad_attribute(ad, *keys):
     return None
 
 
+def _parse_datetime(value) -> datetime | None:
+    """Convertit une string ISO en datetime, ou retourne None si déjà datetime ou invalide."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00").replace("+00:00", ""))
+    except (ValueError, TypeError):
+        return None
+
+
+def _extract_lbc_id(ad) -> str | None:
+    """Extrait l'identifiant unique de l'annonce depuis l'URL ou les attributs disponibles."""
+    # Priorité 1 : attribut direct (selon version de la lib)
+    for attr_name in ("list_id", "id", "ad_id"):
+        val = getattr(ad, attr_name, None)
+        if val:
+            return str(val)
+
+    # Priorité 2 : extraire depuis l'URL (ex: leboncoin.fr/annonce/2391847319)
+    url = getattr(ad, "url", None)
+    if url:
+        match = re.search(r"/(\d{6,})", url)
+        if match:
+            return match.group(1)
+
+    return None
+
+
 def check_alert(alert_id: int):
     """Vérifie une alerte et notifie pour les nouvelles annonces."""
     db = SessionLocal()
     try:
-        # Import ici pour éviter les circular imports au démarrage
         from app.database import Alert
         import lbc
 
@@ -72,9 +102,11 @@ def check_alert(alert_id: int):
 
         new_count = 0
         for ad in result.ads:
-            lbc_id = str(ad.list_id)
+            lbc_id = _extract_lbc_id(ad)
+            if not lbc_id:
+                logger.warning(f"Annonce sans ID identifiable, ignorée : {getattr(ad, 'url', '?')}")
+                continue
 
-            # Vérifier si déjà en base
             existing = db.query(Listing).filter(Listing.leboncoin_id == lbc_id).first()
             if existing:
                 continue
@@ -107,12 +139,10 @@ def check_alert(alert_id: int):
             if hasattr(ad, "location") and ad.location:
                 city = getattr(ad.location, "city_label", None) or getattr(ad.location, "city", None)
 
-            # Construire l'URL
             url = getattr(ad, "url", None)
             if not url and lbc_id:
                 url = f"https://www.leboncoin.fr/annonce/{lbc_id}"
 
-            # Insérer en base
             listing = Listing(
                 alert_id=alert.id,
                 leboncoin_id=lbc_id,
@@ -124,13 +154,12 @@ def check_alert(alert_id: int):
                 rooms=rooms,
                 city=city,
                 url=url,
-                published_at=getattr(ad, "first_publication_date", None),
+                published_at=_parse_datetime(getattr(ad, "first_publication_date", None)),
                 notified_at=datetime.utcnow(),
             )
             db.add(listing)
             db.flush()
 
-            # Envoyer le SMS
             send_sms(listing)
             new_count += 1
 
@@ -159,7 +188,7 @@ def run_all_alerts():
 
     for alert_id in alert_ids:
         check_alert(alert_id)
-        time.sleep(2)  # Délai anti-Datadome entre chaque alerte
+        time.sleep(2)
 
 
 def start_scheduler():
