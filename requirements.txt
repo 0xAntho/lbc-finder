@@ -7,3 +7,4 @@ apscheduler
 lbc
 httpx
 python-dotenv
+psycopg2-binary
