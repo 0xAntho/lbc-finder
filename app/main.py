@@ -1,6 +1,7 @@
 import logging
 import threading
 from contextlib import asynccontextmanager
+import time
 from typing import Optional
 
 from fastapi import FastAPI, Request, Depends
@@ -24,7 +25,16 @@ templates = Jinja2Templates(directory="app/templates")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_db()
+    for attempt in range(5):
+        try:
+            init_db()
+            break
+        except Exception as e:
+            logger.warning(f"DB non prête, tentative {attempt+1}/5 : {e}")
+            time.sleep(3)
+    else:
+        logger.error("Impossible de connecter la DB après 5 tentatives")
+        raise RuntimeError("DB connection failed")
     start_scheduler()
     logger.info("Application démarrée")
     yield
