@@ -95,7 +95,7 @@ async def unauthorized_handler(request: Request, exc):
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @app.post("/login")
@@ -133,17 +133,14 @@ async def dashboard(
     if not user:
         return RedirectResponse(url="/login")
     alerts = db.query(Alert).filter(Alert.user_id == user.id).order_by(Alert.created_at.desc()).all()
-    return templates.TemplateResponse(
-        "dashboard.html",
-        {"request": request, "alerts": alerts, "active": "dashboard", "message": message, "error": error},
-    )
+    return templates.TemplateResponse(request, "dashboard.html", {"alerts": alerts})
 
 
 # ── Alertes CRUD ──────────────────────────────────────────────────────────
 
 @app.get("/alerts/new", response_class=HTMLResponse)
 async def new_alert_page(request: Request, phone: str = Depends(get_current_user)):
-    return templates.TemplateResponse("alert_form.html", {"request": request, "alert": None})
+    return templates.TemplateResponse(request, "alert_form.html", {"alert": None})
 
 
 @app.post("/alerts/new")
@@ -185,7 +182,7 @@ async def edit_alert_page(
     alert = db.query(Alert).filter(Alert.id == alert_id, Alert.user_id == user.id).first()
     if not alert:
         return RedirectResponse(url="/dashboard")
-    return templates.TemplateResponse("alert_form.html", {"request": request, "alert": alert})
+    return templates.TemplateResponse(request, "alert_form.html", {"alert": alert})
 
 
 @app.post("/alerts/{alert_id}/edit")
@@ -262,10 +259,7 @@ async def history(
         selected_alert = db.query(Alert).filter(Alert.id == alert_id).first()
 
     listings = query.order_by(Listing.created_at.desc()).limit(200).all()
-    return templates.TemplateResponse(
-        "history.html",
-        {"request": request, "listings": listings, "alerts": alerts, "selected_alert": selected_alert, "active": "history"},
-    )
+    return templates.TemplateResponse(request, "history.html", {"listings": listings, "alerts": alerts, "selected_alert": selected_alert, "active": "history"})
 
 
 # ── API utilitaires ───────────────────────────────────────────────────────
