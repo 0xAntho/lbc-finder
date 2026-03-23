@@ -78,6 +78,13 @@ def get_or_create_user(db: Session, phone: str) -> User:
     return user
 
 
+# ── Health check (keep-alive Railway) ────────────────────────────────────
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 # ── Auth ──────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)

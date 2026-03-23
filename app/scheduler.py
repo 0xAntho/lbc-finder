@@ -1,8 +1,11 @@
 import logging
+import os
 import re
 import time
+import threading
 from datetime import datetime
 
+import httpx
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.database import SessionLocal, Listing
@@ -14,7 +17,6 @@ scheduler = BackgroundScheduler()
 
 
 def _get_ad_attribute(ad, *keys):
-    """Récupère un attribut dans les attributes[] de l'annonce lbc."""
     attrs = getattr(ad, "attributes", []) or []
     for attr in attrs:
         if hasattr(attr, "key") and attr.key in keys:
@@ -26,7 +28,6 @@ def _get_ad_attribute(ad, *keys):
 
 
 def _parse_datetime(value) -> datetime | None:
-    """Convertit une string ISO en datetime, ou retourne None si déjà datetime ou invalide."""
     if value is None:
         return None
     if isinstance(value, datetime):
@@ -38,25 +39,19 @@ def _parse_datetime(value) -> datetime | None:
 
 
 def _extract_lbc_id(ad) -> str | None:
-    """Extrait l'identifiant unique de l'annonce depuis l'URL ou les attributs disponibles."""
-    # Priorité 1 : attribut direct (selon version de la lib)
     for attr_name in ("list_id", "id", "ad_id"):
         val = getattr(ad, attr_name, None)
         if val:
             return str(val)
-
-    # Priorité 2 : extraire depuis l'URL (ex: leboncoin.fr/annonce/2391847319)
     url = getattr(ad, "url", None)
     if url:
         match = re.search(r"/(\d{6,})", url)
         if match:
             return match.group(1)
-
     return None
 
 
 def check_alert(alert_id: int):
-    """Vérifie une alerte et notifie pour les nouvelles annonces."""
     db = SessionLocal()
     try:
         from app.database import Alert
@@ -111,23 +106,19 @@ def check_alert(alert_id: int):
             if existing:
                 continue
 
-            # Extraire les surfaces depuis les attributs
             land_surface = _get_ad_attribute(ad, "land_surface", "square_land")
             outside_surface = _get_ad_attribute(ad, "outside_surface", "square_outside")
             surface = _get_ad_attribute(ad, "square") or getattr(ad, "surface", None)
             rooms = _get_ad_attribute(ad, "rooms") or getattr(ad, "rooms", None)
 
-            # Post-filtrage surface terrain
             if alert.min_land_surface and land_surface:
                 if land_surface < alert.min_land_surface:
                     continue
 
-            # Post-filtrage surface extérieure
             if alert.min_outside_surface and outside_surface:
                 if outside_surface < alert.min_outside_surface:
                     continue
 
-            # Extraire prix et ville
             price = None
             if hasattr(ad, "price") and ad.price:
                 try:
@@ -175,7 +166,6 @@ def check_alert(alert_id: int):
 
 
 def run_all_alerts():
-    """Lance la vérification de toutes les alertes actives."""
     logger.info("=== Lancement du job horaire ===")
     db = SessionLocal()
     try:
@@ -191,8 +181,20 @@ def run_all_alerts():
         time.sleep(2)
 
 
+def _keep_alive():
+    """Ping l'app toutes les 10 min pour éviter le sleep Railway."""
+    port = os.getenv("PORT", "8080")
+    url = f"http://127.0.0.1:{port}/health"
+    while True:
+        time.sleep(600)
+        try:
+            httpx.get(url, timeout=5)
+            logger.debug("Keep-alive ping OK")
+        except Exception:
+            pass
+
+
 def start_scheduler():
-    """Démarre le scheduler APScheduler (toutes les heures)."""
     scheduler.add_job(
         run_all_alerts,
         trigger="interval",
@@ -203,6 +205,9 @@ def start_scheduler():
     )
     scheduler.start()
     logger.info("Scheduler démarré — job toutes les heures")
+
+    threading.Thread(target=_keep_alive, daemon=True, name="keep-alive").start()
+    logger.info("Keep-alive démarré — ping toutes les 10 min")
 
 
 def stop_scheduler():
