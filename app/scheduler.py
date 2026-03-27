@@ -1,15 +1,12 @@
 import logging
-import os
 import re
 import time
-import threading
 from datetime import datetime
 
-import httpx
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.database import SessionLocal, Listing
-from app.sms import send_sms
+from app.sms import send_sms_batch
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +40,13 @@ def _extract_lbc_id(ad) -> str | None:
         val = getattr(ad, attr_name, None)
         if val:
             return str(val)
+
     url = getattr(ad, "url", None)
     if url:
         match = re.search(r"/(\d{6,})", url)
         if match:
             return match.group(1)
+
     return None
 
 
@@ -95,7 +94,8 @@ def check_alert(alert_id: int):
             db.commit()
             return
 
-        new_count = 0
+        new_listings = []
+
         for ad in result.ads:
             lbc_id = _extract_lbc_id(ad)
             if not lbc_id:
@@ -149,14 +149,16 @@ def check_alert(alert_id: int):
                 notified_at=datetime.utcnow(),
             )
             db.add(listing)
-            db.flush()
+            new_listings.append(listing)
 
-            send_sms(listing)
-            new_count += 1
+        db.flush()
+
+        if new_listings:
+            send_sms_batch(new_listings, alert.name)
 
         alert.last_checked_at = datetime.utcnow()
         db.commit()
-        logger.info(f"Alerte #{alert.id} — {new_count} nouvelle(s) annonce(s)")
+        logger.info(f"Alerte #{alert.id} — {len(new_listings)} nouvelle(s) annonce(s)")
 
     except Exception as e:
         logger.error(f"Erreur inattendue alerte #{alert_id}: {e}", exc_info=True)
@@ -181,19 +183,6 @@ def run_all_alerts():
         time.sleep(2)
 
 
-def _keep_alive():
-    """Ping l'app toutes les 10 min pour éviter le sleep Railway."""
-    port = os.getenv("PORT", "8080")
-    url = f"http://127.0.0.1:{port}/health"
-    while True:
-        time.sleep(600)
-        try:
-            httpx.get(url, timeout=5)
-            logger.debug("Keep-alive ping OK")
-        except Exception:
-            pass
-
-
 def start_scheduler():
     scheduler.add_job(
         run_all_alerts,
@@ -205,9 +194,6 @@ def start_scheduler():
     )
     scheduler.start()
     logger.info("Scheduler démarré — job toutes les heures")
-
-    threading.Thread(target=_keep_alive, daemon=True, name="keep-alive").start()
-    logger.info("Keep-alive démarré — ping toutes les 10 min")
 
 
 def stop_scheduler():

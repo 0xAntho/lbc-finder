@@ -1,13 +1,11 @@
 import logging
-import urllib.parse
 import httpx
 from app.config import WHATSAPP_PHONE, WHATSAPP_APIKEY
 
 logger = logging.getLogger(__name__)
 
 
-def _build_message(listing) -> str:
-    """Construit le message de notification WhatsApp."""
+def _build_listing_block(listing) -> str:
     title = (listing.title or "Annonce")[:38]
     price = f"{listing.price:,}€".replace(",", " ") if listing.price else "Prix N/A"
     surface = f"{listing.surface}m²" if listing.surface else ""
@@ -35,14 +33,18 @@ def _build_message(listing) -> str:
     return "\n".join(lines)
 
 
-def send_sms(listing) -> bool:
-    """Envoie une notification WhatsApp via Callmebot."""
+def send_sms_batch(listings: list, alert_name: str) -> bool:
+    if not listings:
+        return True
     if not WHATSAPP_PHONE or not WHATSAPP_APIKEY:
         logger.error("Callmebot : WHATSAPP_PHONE ou WHATSAPP_APIKEY non configuré dans .env")
         return False
 
-    message = _build_message(listing)
-    logger.info(f"WhatsApp notification : {message!r}")
+    header = f"📋 {alert_name} — {len(listings)} nouvelle(s) annonce(s)"
+    blocks = [_build_listing_block(l) for l in listings]
+    message = header + "\n\n" + "\n\n".join(blocks)
+
+    logger.info(f"WhatsApp batch ({len(listings)} annonces) : {message!r}")
 
     try:
         resp = httpx.get(
@@ -55,7 +57,10 @@ def send_sms(listing) -> bool:
             timeout=15,
         )
         if resp.status_code == 200:
-            logger.info(f"✓ WhatsApp envoyé à {WHATSAPP_PHONE}")
+            if "Message not sent" in resp.text:
+                logger.error(f"Callmebot silent failure : {resp.text}")
+                return False
+            logger.info(f"✓ WhatsApp batch envoyé à {WHATSAPP_PHONE}")
             return True
         else:
             logger.error(f"Callmebot erreur {resp.status_code} : {resp.text}")
