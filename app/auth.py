@@ -1,7 +1,11 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import Request, HTTPException
-from app.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_DAYS, PHONE_NUMBER
+from app.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_DAYS, PHONE_NUMBERS
+
+
+def _normalize(phone: str) -> str:
+    return phone.strip().replace(" ", "").replace("-", "").replace("+", "").replace(".", "")
 
 
 def create_token(phone: str) -> str:
@@ -32,8 +36,13 @@ def get_current_user(request: Request) -> str:
 
 
 def check_phone(phone: str) -> bool:
-    """Vérifie que le numéro correspond à l'utilisateur autorisé."""
-    # Normalise : supprime espaces, tirets, +
-    clean = phone.strip().replace(" ", "").replace("-", "").replace("+", "").replace(".", "")
-    allowed = PHONE_NUMBER.strip().replace(" ", "").replace("+", "")
-    return clean == allowed or clean == f"33{allowed[1:]}" if allowed.startswith("0") else clean == allowed
+    clean = _normalize(phone)
+    for allowed in PHONE_NUMBERS:
+        a = _normalize(allowed)
+        if clean == a:
+            return True
+        if a.startswith("0") and clean == f"33{a[1:]}":
+            return True
+        if clean.startswith("0") and a == f"33{clean[1:]}":
+            return True
+    return False

@@ -3,7 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PHONE_NUMBER = os.getenv("PHONE_NUMBER", "")
+_raw = os.getenv("PHONE_NUMBERS") or os.getenv("PHONE_NUMBER", "")
+PHONE_NUMBERS: list[str] = [p.strip() for p in _raw.split(",") if p.strip()]
+
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_DAYS = 30
