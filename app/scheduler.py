@@ -13,14 +13,20 @@ logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
 
 
+def _to_int(value) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return None
+
+
 def _get_ad_attribute(ad, *keys):
     attrs = getattr(ad, "attributes", []) or []
     for attr in attrs:
         if hasattr(attr, "key") and attr.key in keys:
-            try:
-                return int(attr.value)
-            except (ValueError, TypeError):
-                return attr.value
+            return _to_int(attr.value)
     return None
 
 
@@ -108,8 +114,8 @@ def check_alert(alert_id: int):
 
             land_surface = _get_ad_attribute(ad, "land_surface", "square_land")
             outside_surface = _get_ad_attribute(ad, "outside_surface", "square_outside")
-            surface = _get_ad_attribute(ad, "square") or getattr(ad, "surface", None)
-            rooms = _get_ad_attribute(ad, "rooms") or getattr(ad, "rooms", None)
+            surface = _get_ad_attribute(ad, "square") or _to_int(getattr(ad, "surface", None))
+            rooms = _get_ad_attribute(ad, "rooms") or _to_int(getattr(ad, "rooms", None))
 
             if alert.min_land_surface and land_surface:
                 if land_surface < alert.min_land_surface:
