@@ -16,8 +16,7 @@ def _build_listing_block(listing) -> str:
 
     url = ""
     if listing.url:
-        parts = listing.url.rstrip("/").split("/")
-        url = f"leboncoin.fr/annonce/{parts[-1]}" if parts else listing.url
+        url = listing.url or ""
 
     details = " | ".join(filter(None, [price, surface, rooms]))
     extras = " | ".join(filter(None, [land, outside]))

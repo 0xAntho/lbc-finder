@@ -138,7 +138,7 @@ def check_alert(alert_id: int):
 
             url = getattr(ad, "url", None)
             if not url and lbc_id:
-                url = f"https://www.leboncoin.fr/annonce/{lbc_id}"
+                url = f"https://www.leboncoin.fr/ad/ventes_immobilieres/{lbc_id}"
 
             listing = Listing(
                 alert_id=alert.id,
