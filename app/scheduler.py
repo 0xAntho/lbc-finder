@@ -80,7 +80,7 @@ def check_alert(alert_id: int):
             "locations": [location],
             "sort": lbc.Sort.NEWEST,
             "ad_type": lbc.AdType.OFFER,
-            "category": lbc.Category.IMMOBILIER,
+            "category": lbc.Category.IMMOBILIER_VENTES_IMMOBILIERES,
             "limit": 50,
             "page": 1,
         }
