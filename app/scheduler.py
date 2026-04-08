@@ -60,9 +60,10 @@ def check_alert(alert_id: int):
     db = SessionLocal()
     try:
         from app.database import Alert
+        from sqlalchemy.orm import joinedload
         import lbc
 
-        alert = db.query(Alert).filter(Alert.id == alert_id).first()
+        alert = db.query(Alert).options(joinedload(Alert.user)).filter(Alert.id == alert_id).first()
         if not alert or not alert.is_active:
             return
 
@@ -160,7 +161,14 @@ def check_alert(alert_id: int):
         db.flush()
 
         if new_listings:
-            send_sms_batch(new_listings, alert.name)
+            from app.config import WHATSAPP_CREDENTIALS
+            user_phone = alert.user.phone_number
+            creds = WHATSAPP_CREDENTIALS.get(user_phone)
+            if creds:
+                wa_phone, wa_apikey = creds
+                send_sms_batch(new_listings, alert.name, wa_phone, wa_apikey)
+            else:
+                logger.warning(f"No WhatsApp credentials for {user_phone}")
 
         alert.last_checked_at = datetime.utcnow()
         db.commit()

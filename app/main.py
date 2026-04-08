@@ -107,10 +107,9 @@ async def login_page(request: Request):
 
 @app.post("/login")
 async def login(body: LoginBody, db: Session = Depends(get_db)):
-    if not check_phone(body.phone):
+    clean = check_phone(body.phone)
+    if not clean:
         return JSONResponse({"error": "Numéro non autorisé."}, status_code=401)
-
-    clean = body.phone.strip().replace(" ", "").replace("-", "").replace(".", "")
     get_or_create_user(db, clean)
     token = create_token(clean)
 

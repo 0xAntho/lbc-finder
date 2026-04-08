@@ -1,11 +1,14 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import Request, HTTPException
-from app.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_DAYS, PHONE_NUMBERS
+from app.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_DAYS, ALLOWED_PHONES
 
 
 def _normalize(phone: str) -> str:
-    return phone.strip().replace(" ", "").replace("-", "").replace("+", "").replace(".", "")
+    clean = phone.strip().replace(" ", "").replace("-", "").replace("+", "").replace(".", "")
+    if clean.startswith("33") and len(clean) == 11:
+        clean = "0" + clean[2:]
+    return clean
 
 
 def create_token(phone: str) -> str:
@@ -28,21 +31,15 @@ def verify_token(token: str) -> str | None:
 def get_current_user(request: Request) -> str:
     token = request.cookies.get("session")
     if not token:
-        raise HTTPException(status_code=401, detail="Non authentifié")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     phone = verify_token(token)
     if not phone:
-        raise HTTPException(status_code=401, detail="Session expirée")
+        raise HTTPException(status_code=401, detail="Expired session")
     return phone
 
 
-def check_phone(phone: str) -> bool:
-    clean = _normalize(phone)
-    for allowed in PHONE_NUMBERS:
-        a = _normalize(allowed)
-        if clean == a:
-            return True
-        if a.startswith("0") and clean == f"33{a[1:]}":
-            return True
-        if clean.startswith("0") and a == f"33{clean[1:]}":
-            return True
-    return False
+def check_phone(phone: str) -> str | None:
+    normalized = _normalize(phone)
+    if normalized in ALLOWED_PHONES:
+        return normalized
+    return None

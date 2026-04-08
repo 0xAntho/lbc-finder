@@ -1,6 +1,5 @@
 import logging
 import httpx
-from app.config import WHATSAPP_PHONE, WHATSAPP_APIKEY
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,6 @@ def _build_listing_block(listing) -> str:
     land = f"Terrain : {listing.land_surface}m²" if listing.land_surface else ""
     outside = f"Ext. : {listing.outside_surface}m²" if listing.outside_surface else ""
     city = listing.city or ""
-
     url = listing.url or ""
 
     details = " | ".join(filter(None, [price, surface, rooms]))
@@ -55,21 +53,17 @@ def _split_into_chunks(blocks: list[str], alert_name: str, total: int) -> list[s
         if num_chunks > 1:
             header = f"📋 {alert_name} — {total} annonce(s) [{i+1}/{num_chunks}]"
         else:
-            header = f"📋 {alert_name} — {total} nouvelle(s) annonce(s)"
+            header = f"📋 {alert_name} — {total} new listing(s)"
         messages.append(header + "\n\n" + "\n\n".join(chunk_blocks))
 
     return messages
 
 
-def _send_single(message: str) -> bool:
+def _send_single(message: str, wa_phone: str, wa_apikey: str) -> bool:
     try:
         resp = httpx.get(
             "https://api.callmebot.com/whatsapp.php",
-            params={
-                "phone": WHATSAPP_PHONE,
-                "text": message,
-                "apikey": WHATSAPP_APIKEY,
-            },
+            params={"phone": wa_phone, "text": message, "apikey": wa_apikey},
             timeout=15,
         )
         if resp.status_code == 200:
@@ -78,30 +72,30 @@ def _send_single(message: str) -> bool:
                 return False
             return True
         else:
-            logger.error(f"Callmebot erreur {resp.status_code} : {resp.text}")
+            logger.error(f"Callmebot error {resp.status_code} : {resp.text}")
             return False
     except Exception as e:
         logger.error(f"Callmebot exception : {e}")
         return False
 
 
-def send_sms_batch(listings: list, alert_name: str) -> bool:
+def send_sms_batch(listings: list, alert_name: str, wa_phone: str, wa_apikey: str) -> bool:
     if not listings:
         return True
-    if not WHATSAPP_PHONE or not WHATSAPP_APIKEY:
-        logger.error("Callmebot : WHATSAPP_PHONE ou WHATSAPP_APIKEY non configuré dans .env")
+    if not wa_phone or not wa_apikey:
+        logger.error("Callmebot : credentials are missing for this user")
         return False
 
     blocks = [_build_listing_block(l) for l in listings]
     messages = _split_into_chunks(blocks, alert_name, len(listings))
 
-    logger.info(f"WhatsApp batch : {len(listings)} annonce(s) → {len(messages)} message(s)")
+    logger.info(f"WhatsApp batch : {len(listings)} listing(s) → {len(messages)} message(s)")
 
     all_ok = True
     for i, message in enumerate(messages):
-        ok = _send_single(message)
+        ok = _send_single(message, wa_phone, wa_apikey)
         if ok:
-            logger.info(f"✓ WhatsApp [{i+1}/{len(messages)}] envoyé à {WHATSAPP_PHONE}")
+            logger.info(f"✓ WhatsApp [{i+1}/{len(messages)}] sent to {wa_phone}")
         else:
             all_ok = False
 
